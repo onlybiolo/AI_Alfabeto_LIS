@@ -1,0 +1,23 @@
+# --- Ambienti Virtuali (NON servono, ognuno ha il suo) ---
+venv/
+env/
+ENV/
+.env
+
+# --- Cache di Python (file temporanei inutili) ---
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- File di Backup ---
+# Teniamo il dataset principale, ma lasciamo fuori i backup per non pesare troppo
+dataset_backup*.npy
+
+# --- IDE e Sistema (Impostazioni personali di VSCode o PC) ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Log e file temporanei di sistema ---
+*.log
