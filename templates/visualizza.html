@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visualizzatore Rete LIS</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&family=Syne:wght@400;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0b0e;
+            --surface: #111318;
+            --border: #1e2128;
+            --dim: #2a2d36;
+            --muted: #4a4f5e;
+            --text: #c8ccd8;
+            --bright: #eceef5;
+            --accent: #5b8dee;
+            --green: #3ecf8e;
+            --red: #ef5350;
+            --gold: #f5c842;
+            --orange: #f58642;
+            --mono: 'JetBrains Mono', monospace;
+            --display: 'Syne', sans-serif;
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 13px;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* subtle grid bg */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(91, 141, 238, .03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(91, 141, 238, .03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px 20px 40px;
+        }
+
+        /* ── HEADER ── */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            font-family: var(--display);
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            color: var(--bright);
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .header-meta {
+            font-size: 11px;
+            color: var(--muted);
+            text-align: right;
+            line-height: 1.6;
+        }
+
+        /* ── NAVIGATION ── */
+        .nav-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .nav-btn {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 13px;
+            padding: 8px 16px;
+            cursor: pointer;
+            transition: all .15s;
+            letter-spacing: .03em;
+        }
+
+        .nav-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .nav-btn:disabled {
+            opacity: .3;
+            cursor: default;
+        }
+
+        .nav-counter {
+            font-size: 12px;
+            color: var(--muted);
+            padding: 8px 12px;
+            border: 1px solid var(--border);
+            background: var(--surface);
+            white-space: nowrap;
+        }
+
+        .nav-counter strong {
+            color: var(--bright);
+        }
+
+        .badge-best {
+            font-size: 11px;
+            background: rgba(245, 200, 66, .1);
+            border: 1px solid rgba(245, 200, 66, .3);
+            color: var(--gold);
+            padding: 5px 10px;
+            letter-spacing: .08em;
+        }
+
+        /* ── RUN TITLE ── */
+        .run-title {
+            margin-bottom: 20px;
+        }
+
+        .run-title h2 {
+            font-family: var(--display);
+            font-size: 28px;
+            font-weight: 800;
+            color: var(--bright);
+            line-height: 1;
+            margin-bottom: 4px;
+        }
+
+        .run-title .run-date {
+            font-size: 11px;
+            color: var(--muted);
+            letter-spacing: .05em;
+        }
+
+        /* ── STAT CARDS ── */
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 700px) {
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 14px 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 3px;
+            height: 100%;
+            background: var(--accent);
+        }
+
+        .stat-card.green::before {
+            background: var(--green);
+        }
+
+        .stat-card.gold::before {
+            background: var(--gold);
+        }
+
+        .stat-card.orange::before {
+            background: var(--orange);
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--muted);
+            letter-spacing: .1em;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-size: 26px;
+            font-weight: 700;
+            color: var(--bright);
+            line-height: 1;
+            font-family: var(--display);
+        }
+
+        .stat-value small {
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        /* ── GRID ── */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto auto;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 20px;
+        }
+
+        .panel.full {
+            grid-column: 1 / -1;
+        }
+
+        .panel-title {
+            font-size: 10px;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title::before {
+            content: '';
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background: var(--accent);
+        }
+
+        /* ── NETWORK SVG ── */
+        #network-svg {
+            width: 100%;
+            height: 260px;
+            display: block;
+        }
+
+        /* ── CHARTS ── */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            height: 200px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* ── WEIGHTS TABLE ── */
+        .weights-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .weight-cell {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            padding: 10px 12px;
+        }
+
+        .weight-cell .wc-label {
+            font-size: 10px;
+            color: var(--muted);
+            margin-bottom: 4px;
+            letter-spacing: .08em;
+        }
+
+        .weight-cell .wc-val {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--bright);
+        }
+
+        .weight-cell .wc-sign {
+            font-size: 10px;
+            margin-top: 2px;
+        }
+
+        .positive {
+            color: var(--green);
+        }
+
+        .negative {
+            color: var(--red);
+        }
+
+        /* ── ARCH INFO ── */
+        .arch-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .arch-layer {
+            font-size: 11px;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .arch-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* ── TOOLTIP ── */
+        .tooltip {
+            position: fixed;
+            background: #1a1d24;
+            border: 1px solid var(--dim);
+            color: var(--text);
+            font-family: var(--mono);
+            font-size: 11px;
+            padding: 6px 10px;
+            pointer-events: none;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity .1s;
+            white-space: nowrap;
+        }
+
+        /* ── PROGRESS ── */
+        .progress-bar {
+            height: 2px;
+            background: var(--border);
+            margin-top: 8px;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--green);
+            transition: width .4s ease;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="wrap">
+        <header>
+            <div class="logo">LIS<span>.</span>NET</div>
+            <div class="header-meta">
+                <div id="hdr-runs">— runs</div>
+                <div id="hdr-arch">126 → 256 → 128 → 64 → OUT</div>
+            </div>
+        </header>
+
+        <div class="nav-row">
+            <button class="nav-btn" id="btn-prev">◀ PREC</button>
+            <div class="nav-counter"><strong id="cnt-cur">1</strong> / <span id="cnt-tot">1</span></div>
+            <button class="nav-btn" id="btn-next">SUCC ▶</button>
+            <div id="badge-best" class="badge-best" style="display:none">★ MIGLIORE</div>
+        </div>
+
+        <div class="run-title">
+            <h2 id="run-acc">—%</h2>
+            <div class="run-date" id="run-date">—</div>
+        </div>
+
+        <div class="stats-row">
+            <div class="stat-card green">
+                <div class="stat-label">Accuracy Test</div>
+                <div class="stat-value" id="sc-acc-test">—<small>%</small></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Loss Finale</div>
+                <div class="stat-value" id="sc-loss-fin">—</div>
+            </div>
+            <div class="stat-card orange">
+                <div class="stat-label">Epoche</div>
+                <div class="stat-value" id="sc-epoche">—</div>
+            </div>
+            <div class="stat-card gold">
+                <div class="stat-label">Classi Output</div>
+                <div class="stat-value" id="sc-classi">—</div>
+            </div>
+        </div>
+
+        <!-- accuracy progress -->
+        <div style="margin-bottom:24px">
+            <div
+                style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:4px;letter-spacing:.08em">
+                <span>ACCURACY TEST</span><span id="prog-val">—</span>
+            </div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="prog-fill" style="width:0%"></div>
+            </div>
+        </div>
+
+        <div class="main-grid">
+
+            <!-- rete neurale -->
+            <div class="panel full">
+                <div class="panel-title">Architettura Rete Neurale</div>
+                <svg id="network-svg" viewBox="0 0 900 240" preserveAspectRatio="xMidYMid meet"></svg>
+                <div class="arch-info" id="arch-info"></div>
+            </div>
+
+            <!-- loss chart -->
+            <div class="panel">
+                <div class="panel-title">Loss per Epoca</div>
+                <div class="chart-container">
+                    <canvas id="chart-loss"></canvas>
+                </div>
+            </div>
+
+            <!-- accuracy chart -->
+            <div class="panel">
+                <div class="panel-title">Accuracy per Epoca</div>
+                <div class="chart-container">
+                    <canvas id="chart-acc"></canvas>
+                </div>
+            </div>
+
+            <!-- pesi -->
+            <div class="panel full">
+                <div class="panel-title">Pesi Medi per Layer</div>
+                <div class="weights-grid" id="weights-grid"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+
+    <!-- ── Chart.js (CDN) ── -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+    <script>
+        // ===================== DATI =====================
+        // Carica storico.json via fetch (stesso path del file HTML)
+        // oppure usa il fallback inline se non riesci a servirlo.
+
+        async function loadStorico() {
+            try {
+                const res = await fetch('/modelli/storico.json');
+                if (!res.ok) throw new Error('not found');
+                return await res.json();
+            } catch {
+                // fallback: nessun dato
+                return null;
+            }
+        }
+
+        // ===================== CONFIG =====================
+        const LAYERS = [126, 256, 128, 64, null]; // null = dinamico (n_classi)
+        const LAYER_NAMES = ['Input', 'Hidden 1', 'Hidden 2', 'Hidden 3', 'Output'];
+        const LAYER_COLS = ['#5b8dee', '#3ecf8e', '#3ecf8e', '#3ecf8e', '#f5c842'];
+        const MAX_VIS = 10; // max nodi visibili per layer
+
+        let storico = [];
+        let idx = 0;
+        let bestIdx = 0;
+        let charts = {};
+
+        // ===================== INIT =====================
+        async function init() {
+            const data = await loadStorico();
+            if (!data || data.length === 0) {
+                document.querySelector('.wrap').innerHTML =
+                    `<div style="text-align:center;padding:120px 0;font-size:18px;color:var(--muted)">
+        Nessun dato trovato.<br>
+        <span style="font-size:12px;margin-top:8px;display:block">
+          Assicurati che <code style="color:var(--accent)">modelli/storico.json</code> sia nella stessa directory di questo file.
+        </span>
+       </div>`;
+                return;
+            }
+
+            storico = data;
+            bestIdx = storico.reduce((bi, r, i) =>
+                r.accuracy_test > storico[bi].accuracy_test ? i : bi, 0);
+            idx = storico.length - 1;
+
+            document.getElementById('hdr-runs').textContent = `${storico.length} run${storico.length > 1 ? 's' : ''}`;
+            document.getElementById('cnt-tot').textContent = storico.length;
+
+            buildCharts();
+            render();
+            bindNav();
+        }
+
+        // ===================== NAVIGATION =====================
+        function bindNav() {
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                if (idx > 0) { idx--; render(); }
+            });
+            document.getElementById('btn-next').addEventListener('click', () => {
+                if (idx < storico.length - 1) { idx++; render(); }
+            });
+            document.addEventListener('keydown', e => {
+                if (e.key === 'ArrowLeft' && idx > 0) { idx--; render(); }
+                if (e.key === 'ArrowRight' && idx < storico.length - 1) { idx++; render(); }
+            });
+        }
+
+        // ===================== RENDER =====================
+        function render() {
+            const run = storico[idx];
+            const isBest = idx === bestIdx;
+
+            // counter & badge
+            document.getElementById('cnt-cur').textContent = idx + 1;
+            document.getElementById('btn-prev').disabled = idx === 0;
+            document.getElementById('btn-next').disabled = idx === storico.length - 1;
+            document.getElementById('badge-best').style.display = isBest ? '' : 'none';
+
+            // title
+            const accStr = run.accuracy_test.toFixed(2);
+            document.getElementById('run-acc').textContent = `${accStr}%`;
+            document.getElementById('run-date').textContent = run.data;
+
+            // stat cards
+            const lossArr = run.loss_per_epoca;
+            document.getElementById('sc-acc-test').innerHTML = `${accStr}<small>%</small>`;
+            document.getElementById('sc-loss-fin').textContent = lossArr[lossArr.length - 1].toFixed(4);
+            document.getElementById('sc-epoche').textContent = lossArr.length;
+            document.getElementById('sc-classi').textContent = run.n_classi ?? 26;
+
+            // progress bar
+            document.getElementById('prog-val').textContent = accStr + '%';
+            document.getElementById('prog-fill').style.width = run.accuracy_test + '%';
+
+            // charts
+            updateChart('loss', run.loss_per_epoca, 'var(--red)', false);
+            updateChart('acc', run.accuracy_per_epoca, 'var(--green)', true, run.accuracy_test);
+
+            // rete
+            drawNetwork(run);
+
+            // pesi
+            drawWeights(run);
+        }
+
+        // ===================== CHARTS =====================
+        function buildCharts() {
+            const defaults = {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: { duration: 300 },
+                plugins: {
+                    legend: { display: false }, tooltip: {
+                        backgroundColor: '#1a1d24',
+                        borderColor: '#2a2d36',
+                        borderWidth: 1,
+                        titleColor: '#eceef5',
+                        bodyColor: '#c8ccd8',
+                        titleFont: { family: "'JetBrains Mono'" },
+                        bodyFont: { family: "'JetBrains Mono'", size: 11 },
+                    }
+                },
+                scales: {
+                    x: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#4a4f5e', font: { family: "'JetBrains Mono'", size: 10 } } },
+                    y: { grid: { color: 'rgba(255,255,255,.05)' }, ticks: { color: '#4a4f5e', font: { family: "'JetBrains Mono'", size: 10 } } },
+                }
+            };
+
+            charts.loss = new Chart(document.getElementById('chart-loss'), {
+                type: 'line',
+                data: { labels: [], datasets: [{ data: [], borderWidth: 1.5, pointRadius: 0, tension: .4, fill: true }] },
+                options: { ...defaults, scales: { ...defaults.scales, y: { ...defaults.scales.y, min: 0 } } }
+            });
+
+            charts.acc = new Chart(document.getElementById('chart-acc'), {
+                type: 'line',
+                data: {
+                    labels: [], datasets: [
+                        { data: [], borderWidth: 1.5, pointRadius: 0, tension: .4, fill: true },
+                        { data: [], borderWidth: 1, borderDash: [4, 3], pointRadius: 0, fill: false }
+                    ]
+                },
+                options: { ...defaults, scales: { ...defaults.scales, y: { ...defaults.scales.y, min: 70, max: 101 } } }
+            });
+        }
+
+        function updateChart(key, dataArr, color, isAcc, testVal) {
+            const ch = charts[key === 'loss' ? 'loss' : 'acc'];
+            const labels = dataArr.map((_, i) => i + 1);
+
+            // parse CSS var
+            const resolvedColor = getComputedStyle(document.documentElement)
+                .getPropertyValue(color.replace('var(', '').replace(')', '').trim()) || color;
+
+            ch.data.labels = labels;
+            ch.data.datasets[0].data = dataArr;
+            ch.data.datasets[0].borderColor = color;
+            ch.data.datasets[0].backgroundColor = color.replace('var', '').replace('(', 'rgba(').slice(0, -1) + ', .08)';
+            // simpler fill color
+            ch.data.datasets[0].backgroundColor = isAcc
+                ? 'rgba(62,207,142,.08)' : 'rgba(239,83,80,.08)';
+
+            if (isAcc && testVal !== undefined) {
+                ch.data.datasets[1].data = dataArr.map(() => testVal);
+                ch.data.datasets[1].borderColor = 'rgba(245,200,66,.5)';
+                ch.data.datasets[1].label = `Test: ${testVal.toFixed(1)}%`;
+            }
+
+            ch.update('none');
+        }
+
+        // ===================== RETE NEURALE =====================
+        function drawNetwork(run) {
+            const svg = document.getElementById('network-svg');
+            svg.innerHTML = '';
+
+            const W = 900, H = 240;
+            const nClassi = run.n_classi ?? 26;
+            const layers = [126, 256, 128, 64, nClassi];
+            const nLayers = layers.length;
+            const padX = 60;
+            const xStep = (W - padX * 2) / (nLayers - 1);
+
+            // posizioni nodi
+            const positions = layers.map((n, l) => {
+                const nv = Math.min(n, MAX_VIS);
+                const ys = [];
+                for (let j = 0; j < nv; j++) {
+                    ys.push(20 + (H - 60) * j / Math.max(nv - 1, 1));
+                }
+                return { x: padX + l * xStep, ys, n, nv };
+            });
+
+            const pesiAbs = run.pesi_medi_abs || Array(nLayers - 1).fill(0.05);
+            const pesiSign = run.pesi_medi_segno || Array(nLayers - 1).fill(0);
+
+            // ── connessioni ──
+            for (let l = 0; l < nLayers - 1; l++) {
+                const wAbs = pesiAbs[l] ?? 0.05;
+                const wSign = pesiSign[l] ?? 0;
+                const col = wSign >= 0 ? '91,141,238' : '239,83,80';
+                const lw = Math.max(0.2, Math.min(2, wAbs * 20));
+                const alpha = Math.max(0.03, Math.min(0.18, wAbs * 2.5));
+
+                const src = positions[l];
+                const dst = positions[l + 1];
+                for (const y1 of src.ys) {
+                    for (const y2 of dst.ys) {
+                        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                        line.setAttribute('x1', src.x); line.setAttribute('y1', y1);
+                        line.setAttribute('x2', dst.x); line.setAttribute('y2', y2);
+                        line.setAttribute('stroke', `rgba(${col},${alpha})`);
+                        line.setAttribute('stroke-width', lw);
+                        svg.appendChild(line);
+                    }
+                }
+            }
+
+            // ── nodi ──
+            positions.forEach(({ x, ys, n, nv }, l) => {
+                ys.forEach((y, j) => {
+                    const g = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    g.setAttribute('cx', x);
+                    g.setAttribute('cy', y);
+                    g.setAttribute('r', 7);
+                    g.setAttribute('fill', LAYER_COLS[l]);
+                    g.setAttribute('fill-opacity', '.85');
+                    g.setAttribute('stroke', '#1e2128');
+                    g.setAttribute('stroke-width', '1.2');
+                    svg.appendChild(g);
+                });
+
+                // "..." se troncato
+                if (n > MAX_VIS) {
+                    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    t.setAttribute('x', x);
+                    t.setAttribute('y', H - 30);
+                    t.setAttribute('text-anchor', 'middle');
+                    t.setAttribute('fill', '#4a4f5e');
+                    t.setAttribute('font-size', '14');
+                    t.textContent = '⋮';
+                    svg.appendChild(t);
+                }
+
+                // etichetta
+                const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                lbl.setAttribute('x', x);
+                lbl.setAttribute('y', H - 8);
+                lbl.setAttribute('text-anchor', 'middle');
+                lbl.setAttribute('fill', '#6a7080');
+                lbl.setAttribute('font-size', '10');
+                lbl.setAttribute('font-family', "'JetBrains Mono'");
+                lbl.textContent = `${LAYER_NAMES[l]} (${n})`;
+                svg.appendChild(lbl);
+            });
+
+            // ── arch info row ──
+            const info = document.getElementById('arch-info');
+            info.innerHTML = '';
+            positions.forEach(({ n }, l) => {
+                const d = document.createElement('div');
+                d.className = 'arch-layer';
+                d.innerHTML = `<div class="arch-dot" style="background:${LAYER_COLS[l]}"></div>${LAYER_NAMES[l]}: ${n}`;
+                info.appendChild(d);
+            });
+        }
+
+        // ===================== PESI =====================
+        function drawWeights(run) {
+            const grid = document.getElementById('weights-grid');
+            grid.innerHTML = '';
+            const abs = run.pesi_medi_abs || [];
+            const sign = run.pesi_medi_segno || [];
+            const labels = ['Input→H1', 'H1→H2', 'H2→H3', 'H3→Out'];
+
+            abs.forEach((v, i) => {
+                const s = sign[i] ?? 0;
+                const cell = document.createElement('div');
+                cell.className = 'weight-cell';
+                const signClass = s >= 0 ? 'positive' : 'negative';
+                const signStr = s >= 0 ? `+${s.toFixed(5)}` : s.toFixed(5);
+                cell.innerHTML = `
+      <div class="wc-label">${labels[i] ?? `Layer ${i}`}</div>
+      <div class="wc-val">${v.toFixed(5)}</div>
+      <div class="wc-sign ${signClass}">segno medio: ${signStr}</div>`;
+                grid.appendChild(cell);
+            });
+        }
+
+        // ===================== START =====================
+        init();
+    </script>
+</body>
+
+</html>

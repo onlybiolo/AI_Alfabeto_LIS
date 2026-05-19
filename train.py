@@ -10,16 +10,21 @@ dataset = np.load('dati/dataset.npy')
 X = dataset[:, :126].astype(float) # 63 coords + 63 velocita
 y = dataset[:, 126].astype(int)     # etichette intere (0-25)
 
+# calcolo automaticamente il numero di classi presenti nel dataset
+# uso max(y)+1 (non len(unique)) perché le etichette potrebbero non essere consecutive
+# es: [0,1,3,9] -> 4 unique ma indice max = 9 -> serve size 10
+n_classi = int(y.max()) + 1
+
 # per categorizzare, ond'evitare che l'ai pensa che numeri grandi siano simili o piccoli diversi
 # uso l'one hot encoding, mi garantisce di trasformare i vari numeri in array con un bit "caldo"
 # cioe se avessi [1,2,3] diventerebbe [1,0,0] [0,1,0] [0,0,1] cosi e capace di 'categorizzare' le cose
 # in modo efficiente 
-def one_hot(y, n_classi=26):
+def one_hot(y, n_classi):
     out = np.zeros((len(y), n_classi))
     out[np.arange(len(y)), y] = 1
     return out # out sarebbe l'etichetta cambiata in un array di zeri e uno 
 
-Y = one_hot(y)  # (n_frame, 26)
+Y = one_hot(y, n_classi)  # (n_frame, n_classi)
 
 # creo un random seed col tempo
 np.random.seed(int(datetime.datetime.now().timestamp()))
@@ -34,10 +39,10 @@ print(f"Dimensioni del dataset: {dataset.shape}")
 print(f"Dimensione training set: {X_training.shape}")
 print(f"Dimensione test set: {X_testing.shape}")
 
-layers = [126, 256, 128, 64, 26]
+layers = [126, 256, 128, 64, n_classi]
 # 63 -> coordinate per frame (fisso)
 # 256, 128, 64 -> strati nascosti (possono cambiare, per i 26.000 circa vanno bene questi, ma se dovessi testare posso abbassare a 128, 64, 32)
-# 26 -> output (numero di lettere) (fisso)
+# n_classi -> output (numero di lettere) (dinamico)
 
 pesi = []
 bias = []
@@ -213,6 +218,7 @@ else:
 
 run_corrente = {
     "data": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+    "n_classi": n_classi,
     "loss_per_epoca": storico_loss,
     "accuracy_per_epoca": storico_accuracy,
     "accuracy_test": round(float(accuratezza_test), 2),
@@ -230,8 +236,11 @@ print(f"Storico aggiornato ({len(storico)} training salvati)")
 # =================================================== SALVATAGGIO MODELLO ===================================================
 # salvo il modello solo se e il migliore in accuracy test
 
+# confronto l'accuracy solo con i vecchi training che avevano lo stesso numero di classi
+storico_stesse_classi = [s for s in storico[:-1] if s.get('n_classi', 26) == n_classi]
+
 migliore_precedente = max(
-    (s['accuracy_test'] for s in storico[:-1]),
+    (s['accuracy_test'] for s in storico_stesse_classi),
     default=-1
 )
 

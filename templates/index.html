@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASL RILEVATORE by Cristian Somma & Biolo Derek</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Sfondo neutro e pulito */
+        body {
+            background-color: #f4f4f5;
+            /* Sfumatura di grigio molto chiara */
+        }
+    </style>
+</head>
+
+<body class="flex justify-center items-center min-h-screen p-4 sm:p-8">
+
+    <!-- Card Principale -->
+    <div class="max-w-6xl w-full bg-white rounded-xl shadow-md border border-gray-300 p-6 sm:p-8">
+
+        <!-- Intestazione -->
+        <header class="mb-8 border-b border-gray-100 pb-4">
+            <h1 class="text-3xl font-bold text-gray-800 tracking-tight">
+                ASL Rilevatore
+                <span class="text-gray-400 font-normal text-lg ml-2 hidden sm:inline-block">
+                    | by Cristian Somma & Biolo Derek
+                </span>
+            </h1>
+            <p class="text-gray-400 font-normal text-sm sm:hidden mt-1">by Cristian Somma & Biolo Derek</p>
+        </header>
+
+        <!-- Layout Orizzontale (Griglia/Flex) -->
+        <main class="flex flex-col lg:flex-row gap-8">
+
+            <!-- Colonna Sinistra: Video Feed (Si adatta all'immagine senza tagliare) -->
+            <div class="lg:w-3/5">
+                <div class="bg-gray-100 p-2 rounded-lg border border-gray-300 shadow-inner">
+                    <img src="{{ url_for('video_feed') }}" alt="Webcam Feed"
+                        class="w-full h-auto block rounded border border-gray-200">
+                </div>
+            </div>
+
+            <!-- Colonna Destra: Contenuto e Controlli -->
+            <div
+                class="lg:w-2/5 flex flex-col justify-between bg-gray-50 p-6 rounded-lg border border-gray-200 shadow-sm">
+
+                <div>
+                    <h2 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Lettera Rilevata</h2>
+
+                    <!-- Text Holder (Stile display "incassato") -->
+                    <div id="text_holder"
+                        class="bg-white border border-gray-300 shadow-inner rounded-md h-32 flex items-center justify-center text-7xl font-bold text-green-600 font-mono mb-6">
+                        <!-- Il testo rilevato apparirà qui -->
+                    </div>
+
+                    <!-- Timer -->
+                    <div id="timer"
+                        class="text-sm text-gray-600 bg-white border border-gray-200 px-4 py-3 rounded-md shadow-sm">
+                        <strong class="text-gray-800">Timer:</strong> Tempo rimasto prima che la lettera venga
+                        riscritta...
+                    </div>
+                </div>
+
+                <!-- Pulsantiera di Controllo Moderna -->
+                <div class="mt-8 flex flex-col gap-3">
+                    
+                    <!-- Bottone Principale: Visualizzazione Grafici & Rete -->
+                    <button onclick="window.location.href='visualizza'"
+                        class="w-full flex items-center justify-center gap-2.5 py-3.5 px-5 rounded-xl text-white font-bold bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 active:from-violet-700 active:to-indigo-700 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 uppercase tracking-widest text-sm">
+                        <svg class="w-5 h-5 text-indigo-100" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 4-4M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/>
+                        </svg>
+                        Grafici & Rete Neurale
+                    </button>
+
+                    <!-- Griglia per le Azioni Secondarie -->
+                    <div class="grid grid-cols-2 gap-3">
+                        
+                        <!-- Svuota Testo -->
+                        <button onclick="svuotaTesto()"
+                            class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-gray-700 font-semibold bg-gray-100 hover:bg-gray-200 active:bg-gray-300 border border-gray-300 shadow-sm transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 uppercase tracking-wider text-xs">
+                            <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                            Svuota Testo
+                        </button>
+
+                        <!-- Ferma Server -->
+                        <button onclick="stop_server()"
+                            class="flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-red-600 font-semibold bg-red-50 hover:bg-red-100 active:bg-red-200 border border-red-200 shadow-sm transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 uppercase tracking-wider text-xs">
+                            <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"/>
+                            </svg>
+                            Ferma Server
+                        </button>
+
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        function svuotaTesto() {
+            document.getElementById('text_holder').innerText = '';
+        }
+    </script>
+</body>
+
+</html>
